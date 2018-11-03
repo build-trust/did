@@ -1,0 +1,41 @@
+; This document combines information from the DID, URI and ABNF specifications
+; to describe a complete grammar for did and did-reference strings.
+;
+; DID Spec:  https://w3c-ccg.github.io/did-spec/#the-generic-did-scheme
+; URI Spec:  https://tools.ietf.org/html/rfc3986
+; ABNF Spec: https://tools.ietf.org/html/rfc5234
+
+did-reference     = did [ "/" did-path ] [ "#" did-fragment ]
+
+did               = "did:" method ":" specific-idstring
+
+method            = 1*methodchar
+methodchar        = %x61-7A / DIGIT ; 61-7A is a-z in US-ASCII
+specific-idstring = idstring *( ":" idstring )
+idstring          = 1*idchar
+idchar            = ALPHA / DIGIT / "." / "-"
+
+; did-path is identical to a URI path and MUST conform to the ABNF of the path-rootless ABNF rule in [RFC3986].
+; https://tools.ietf.org/html/rfc3986#section-3.3
+did-path          = segment-nz *( "/" segment )
+
+; did-fragment is identical to a URI fragment and MUST conform to the ABNF of the fragment ABNF rule in [RFC3986]
+; https://tools.ietf.org/html/rfc3986#section-3.5
+did-fragment      = *( pchar / "/" / "?" )
+
+segment           = *pchar
+segment-nz        = 1*pchar
+pchar             = unreserved / pct-encoded / sub-delims / ":" / "@"
+unreserved        = ALPHA / DIGIT / "-" / "." / "_" / "~"
+pct-encoded       = "%" HEXDIG HEXDIG
+sub-delims        = "!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / "="
+
+; https://tools.ietf.org/html/rfc5234
+; ALPHA           =  %x41-5A / %x61-7A
+; HEXDIG          =  DIGIT / "A" / "B" / "C" / "D" / "E" / "F"
+; DIGIT           =  %x30-39
+
+; http://www.columbia.edu/kermit/ascii.html
+; 41-5A is big letters A-Z in US-ASCII
+; 61-7A is small letters a-z in US-ASCII
+; 30-39 is digits 0-9 in US-ASCII
