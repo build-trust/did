@@ -4,6 +4,44 @@ import (
 	"testing"
 )
 
+func TestIsReference(t *testing.T) {
+
+	t.Run("returns false if no Path of Fragment", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123"}
+		if d.IsReference() {
+			t.Errorf("returned true")
+		}
+	})
+
+	t.Run("returns true if Path", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", Path: "a/b"}
+		if !d.IsReference() {
+			t.Errorf("returned false")
+		}
+	})
+
+	t.Run("returns true if PathSegements", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", PathSegments: []string{"a", "b"}}
+		if !d.IsReference() {
+			t.Errorf("returned false")
+		}
+	})
+
+	t.Run("returns true if Fragment", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", Fragment: "00000"}
+		if !d.IsReference() {
+			t.Errorf("returned false")
+		}
+	})
+
+	t.Run("returns true if Path and Fragment", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", Path: "a/b", Fragment: "00000"}
+		if !d.IsReference() {
+			t.Errorf("returned false")
+		}
+	})
+}
+
 // nolint
 func TestString(t *testing.T) {
 

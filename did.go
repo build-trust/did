@@ -45,6 +45,12 @@ type parser struct {
 // a step in the parser state machine that returns the next step
 type parserStep func() parserStep
 
+// IsReference returns true if a DID has a Path or a Fragment
+// https://w3c-ccg.github.io/did-spec/#dfn-did-reference
+func (d *DID) IsReference() bool {
+	return (d.Path != "" || len(d.PathSegments) > 0 || d.Fragment != "")
+}
+
 // String encodes a DID struct into a valid DID string.
 func (d *DID) String() string {
 	var buf strings.Builder
