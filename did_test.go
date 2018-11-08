@@ -5,6 +5,91 @@ import (
 )
 
 // nolint
+func TestString(t *testing.T) {
+
+	t.Run("assembles a DID", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123"}
+		output := d.String()
+		expected := "did:example:123"
+		if output != expected {
+			t.Errorf("output: %s, expected: %s", output, expected)
+		}
+	})
+
+	t.Run("assembles a DID from IDStrings", func(t *testing.T) {
+		d := &DID{Method: "example", IDStrings: []string{"123", "456"}}
+		output := d.String()
+		expected := "did:example:123:456"
+		if output != expected {
+			t.Errorf("output: %s, expected: %s", output, expected)
+		}
+	})
+
+	t.Run("returns empty string if no method", func(t *testing.T) {
+		d := &DID{ID: "123"}
+		output := d.String()
+		expected := ""
+		if output != expected {
+			t.Errorf("output: %s, expected: empty string", output)
+		}
+	})
+
+	t.Run("returns empty string in no ID or IDStrings", func(t *testing.T) {
+		d := &DID{Method: "example"}
+		output := d.String()
+		expected := ""
+		if output != expected {
+			t.Errorf("output: %s, expected: empty string", output)
+		}
+	})
+
+	t.Run("includes Path", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", Path: "a/b"}
+		output := d.String()
+		expected := "did:example:123/a/b"
+		if output != expected {
+			t.Errorf("output: %s, expected: %s", output, expected)
+		}
+	})
+
+	t.Run("includes Path assembled from PathSegements", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", PathSegments: []string{"a", "b"}}
+		output := d.String()
+		expected := "did:example:123/a/b"
+		if output != expected {
+			t.Errorf("output: %s, expected: %s", output, expected)
+		}
+	})
+
+	t.Run("includes Fragment", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", Fragment: "00000"}
+		output := d.String()
+		expected := "did:example:123#00000"
+		if output != expected {
+			t.Errorf("output: %s, expected: %s", output, expected)
+		}
+	})
+
+	t.Run("does not include Fragment if Path is present", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", Path: "a/b", Fragment: "00000"}
+		output := d.String()
+		expected := "did:example:123/a/b"
+		if output != expected {
+			t.Errorf("output: %s, expected: %s", output, expected)
+		}
+	})
+
+	t.Run("does not include Fragment if PathSegments is present", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", PathSegments: []string{"a", "b"}, Fragment: "00000"}
+		output := d.String()
+		expected := "did:example:123/a/b"
+		if output != expected {
+			t.Errorf("output: %s, expected: %s", output, expected)
+		}
+	})
+}
+
+// nolint
 func TestParse(t *testing.T) {
 
 	t.Run("returns error if input is empty", func(t *testing.T) {

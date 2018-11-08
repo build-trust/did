@@ -45,6 +45,51 @@ type parser struct {
 // a step in the parser state machine that returns the next step
 type parserStep func() parserStep
 
+// String encodes a DID struct into a valid DID string.
+func (d *DID) String() string {
+	var buf strings.Builder
+
+	// write the did: prefix
+	buf.WriteString("did:") // nolint, returned error is always nil
+
+	if d.Method != "" {
+		// write method followed by a `:`
+		buf.WriteString(d.Method) // nolint, returned error is always nil
+		buf.WriteByte(':')        // nolint, returned error is always nil
+	} else {
+		// if there is no Method, return an empty string
+		return ""
+	}
+
+	if d.ID != "" {
+		buf.WriteString(d.ID) // nolint, returned error is always nil
+	} else if len(d.IDStrings) > 0 {
+		// join IDStrings with a colon to make the ID
+		buf.WriteString(strings.Join(d.IDStrings[:], ":")) // nolint, returned error is always nil
+	} else {
+		// if there is no ID, return an empty string
+		return ""
+	}
+
+	if d.Path != "" {
+		// write a leading / and then Path
+		buf.WriteByte('/')      // nolint, returned error is always nil
+		buf.WriteString(d.Path) // nolint, returned error is always nil
+	} else if len(d.PathSegments) > 0 {
+		// write a leading / and then PathSegments joined with / between them
+		buf.WriteByte('/')                                    // nolint, returned error is always nil
+		buf.WriteString(strings.Join(d.PathSegments[:], "/")) // nolint, returned error is always nil
+	} else {
+		// add fragment only when there is no path
+		if d.Fragment != "" {
+			buf.WriteByte('#')          // nolint, returned error is always nil
+			buf.WriteString(d.Fragment) // nolint, returned error is always nil
+		}
+	}
+
+	return buf.String()
+}
+
 // Parse parses the input string into a DID structure.
 func Parse(input string) (*DID, error) {
 	// intialize the parser state
