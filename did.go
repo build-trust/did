@@ -328,7 +328,7 @@ func (p *parser) parsePath() parserStep {
 
 		// pchar = unreserved / pct-encoded / sub-delims / ":" / "@"
 		if !percentEncoded && isNotValidPathChar(char) {
-			return p.errorf(currentIndex, "character is not allowed in fragment")
+			return p.errorf(currentIndex, "character is not allowed in path")
 		}
 
 		// move to the next char

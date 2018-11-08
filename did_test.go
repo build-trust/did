@@ -6,7 +6,7 @@ import (
 
 func TestIsReference(t *testing.T) {
 
-	t.Run("returns false if no Path of Fragment", func(t *testing.T) {
+	t.Run("returns false if no Path or Fragment", func(t *testing.T) {
 		d := &DID{Method: "example", ID: "123"}
 		if d.IsReference() {
 			t.Errorf("returned true")
@@ -276,7 +276,7 @@ func TestParse(t *testing.T) {
 		}
 	})
 
-	t.Run("fails of ID has an invalid char", func(t *testing.T) {
+	t.Run("fails if ID has an invalid char", func(t *testing.T) {
 		_, err := Parse("did:a:1&&111")
 		if err == nil {
 			t.Errorf("error is nil")
@@ -360,7 +360,7 @@ func TestParse(t *testing.T) {
 		}
 	})
 
-	t.Run("does not fail if path has atleast on segment and a trailing slash", func(t *testing.T) {
+	t.Run("does not fail if path has atleast one segment and a trailing slash", func(t *testing.T) {
 		_, err := Parse("did:a:123:456/a/b/")
 		if err != nil {
 			t.Errorf("error is not nil - %+v", err)
