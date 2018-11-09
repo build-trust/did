@@ -152,7 +152,7 @@ func (p *parser) parseScheme() parserStep {
 
 	currentIndex := 3 // 4 bytes in 'did:', i.e index 3
 
-	// the grammer requires `did:` prefix
+	// the grammar requires `did:` prefix
 	if p.input[:currentIndex+1] != "did:" {
 		return p.errorf(currentIndex, "input does not begin with 'did:' prefix")
 	}
@@ -193,7 +193,7 @@ func (p *parser) parseMethod() parserStep {
 			break
 		}
 
-		// as per the grammer method can only be made of digits 0-9 or small letters a-z
+		// as per the grammar method can only be made of digits 0-9 or small letters a-z
 		if isNotDigit(char) && isNotSmallLetter(char) {
 			return p.errorf(currentIndex, "character is not a-z OR 0-9")
 		}

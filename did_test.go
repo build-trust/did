@@ -398,7 +398,7 @@ func TestParse(t *testing.T) {
 		}
 	})
 
-	t.Run("succeeds with percent encoded chars in fragement", func(t *testing.T) {
+	t.Run("succeeds with percent encoded chars in fragment", func(t *testing.T) {
 		d, err := Parse("did:a:123:456#aaaaaa%20a")
 		if err != nil {
 			t.Errorf("error is not nil - %+v", err)
