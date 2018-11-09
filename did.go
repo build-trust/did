@@ -306,6 +306,7 @@ func (p *parser) parsePath() parserStep {
 		char := input[currentIndex]
 
 		if char == '/' {
+			// encountered / input may have another path segment, try to parse that next
 			next = p.parsePath
 			break
 		}
