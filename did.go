@@ -418,7 +418,7 @@ func (p *parser) parseFragment() parserStep {
 // other parser steps use this function to exit the state machine with an error
 func (p *parser) errorf(index int, format string, args ...interface{}) parserStep {
 	p.currentIndex = index
-	p.err = fmt.Errorf(format, args)
+	p.err = fmt.Errorf(format, args...)
 	return nil
 }
 

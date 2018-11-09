@@ -450,6 +450,20 @@ func TestParse(t *testing.T) {
 	})
 }
 
+func Test_errorf(t *testing.T) {
+	p := &parser{}
+	p.errorf(10, "%s,%s", "a", "b")
+
+	if p.currentIndex != 10 {
+		t.Errorf("did not set currentIndex")
+	}
+
+	e := p.err.Error()
+	if e != "a,b" {
+		t.Errorf("err message is: '%s' expected: 'a,b'", e)
+	}
+}
+
 func Test_isNotValidIDChar(t *testing.T) {
 	a := []byte{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
 		'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'Z', 'Y', 'Z',
