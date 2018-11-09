@@ -330,6 +330,25 @@ func TestParse(t *testing.T) {
 			t.Errorf("error is nil")
 		}
 
+		_, err = Parse("did:a:123:456/%!*")
+		if err == nil {
+			t.Errorf("error is nil")
+		}
+
+		_, err = Parse("did:a:123:456/%!A")
+		if err == nil {
+			t.Errorf("error is nil")
+		}
+
+		_, err = Parse("did:a:123:456/%A!")
+		if err == nil {
+			t.Errorf("error is nil")
+		}
+
+		_, err = Parse("did:a:123:456/%A%")
+		if err == nil {
+			t.Errorf("error is nil")
+		}
 	})
 
 	t.Run("fails if path is empty but there is a slash", func(t *testing.T) {
@@ -398,6 +417,26 @@ func TestParse(t *testing.T) {
 		}
 
 		_, err = Parse("did:a:123:456#%a")
+		if err == nil {
+			t.Errorf("error is nil")
+		}
+
+		_, err = Parse("did:a:123:456#%!*")
+		if err == nil {
+			t.Errorf("error is nil")
+		}
+
+		_, err = Parse("did:a:123:456#%!A")
+		if err == nil {
+			t.Errorf("error is nil")
+		}
+
+		_, err = Parse("did:a:123:456#%A!")
+		if err == nil {
+			t.Errorf("error is nil")
+		}
+
+		_, err = Parse("did:a:123:456#%A%")
 		if err == nil {
 			t.Errorf("error is nil")
 		}
