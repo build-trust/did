@@ -316,7 +316,7 @@ func (p *parser) parsePath() parserStep {
 			if (currentIndex+2 >= inputLength) ||
 				isNotHexDigit(input[currentIndex+1]) ||
 				isNotHexDigit(input[currentIndex+2]) {
-				return p.errorf(currentIndex, "% is not followed by 2 hex digits")
+				return p.errorf(currentIndex, "%% is not followed by 2 hex digits")
 			}
 			// if we got here, we're dealing with percent encoded char, jump three chars
 			percentEncoded = true
@@ -382,7 +382,7 @@ func (p *parser) parseFragment() parserStep {
 			if (currentIndex+2 >= inputLength) ||
 				isNotHexDigit(input[currentIndex+1]) ||
 				isNotHexDigit(input[currentIndex+2]) {
-				return p.errorf(currentIndex, "% is not followed by 2 hex digits")
+				return p.errorf(currentIndex, "%% is not followed by 2 hex digits")
 			}
 			// if we got here, we're dealing with percent encoded char, jump three chars
 			percentEncoded = true
