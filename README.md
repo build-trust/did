@@ -1,5 +1,7 @@
 # did
 
+[![GoDoc](https://godoc.org/github.com/ockam-network/did?status.svg)](https://godoc.org/github.com/ockam-network/did)
+
 `did` is a Go package that provides tools to work with
 [Decentralized Identifiers (DIDs)](https://w3c-ccg.github.io/did-spec).
 
@@ -90,7 +92,7 @@ fmt.Println(d.String())
 // Output: did:example:q7ckgxeq1lxmra0r#keys-1
 ```
 
-For more documentation and examples, please see godoc.
+For more documentation and examples, please see [godoc](https://godoc.org/github.com/ockam-network/did).
 
 ## Build
 
