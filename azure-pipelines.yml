@@ -16,12 +16,9 @@ steps:
     mv !(gopath) '$(modulePath)'
     echo '##vso[task.prependpath]$(GOBIN)'
     echo '##vso[task.prependpath]$(GOROOT)/bin'
+    go version
   displayName: 'Set up the Go workspace'
 
-- script: go build -v .
+- script: ./build
   workingDirectory: '$(modulePath)'
   displayName: 'Build'
-
-- script: go test -v -cover ./...
-  workingDirectory: '$(modulePath)'
-  displayName: 'Run tests'

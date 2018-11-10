@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+#
+# This script is used build this project
+
+# TRACING:
+#
+# If the TRACE environment variable is truthy turn on tracing,
+# using the bash -x option. Useful when debugging this script.
+#
+# TRACE=1 ./build
+#
+[[ "${TRACE}" ]] && set -x
+
+# Set Bash Options.
+#
+# -e option will cause the script to exit immediately when a command fails.
+#
+# -o pipefail option sets the exit code of a pipeline to that of the
+# rightmost command to exit with a non-zero status, or zero if all commands
+# of the pipeline exit successfully.
+set -eo pipefail
+
+# Check if git is available, go is available and GOPATH is not empty
+check() {
+	if ! [ -x "$(command -v git)" ]; then
+		echo 'ERROR: could not find the git command.' >&2
+		exit 1
+	fi
+
+	if ! [ -x "$(command -v go)" ]; then
+		echo 'ERROR: could not find the go command.' >&2
+		exit 1
+	fi
+
+	if [ -z "$GOPATH" ]; then
+		echo 'ERROR: GOPATH is empty.' >&2
+		exit 1
+	fi
+}
+
+# run gometalinter, install it if not present
+lint() {
+	# if gometalinter is not installed, install it
+	if [ ! -f "$GOPATH/bin/gometalinter" ]; then
+		go get -u github.com/alecthomas/gometalinter
+		gometalinter --install
+	fi
+
+	gometalinter ./...
+}
+
+# build the code
+build() {
+	go build -v ./...
+}
+
+# run tests with coverage analysis
+test() {
+	go test -v -cover ./...
+}
+
+check && lint && build && test
