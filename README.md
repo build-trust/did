@@ -25,11 +25,11 @@ import (
 )
 
 func main() {
-  d, err := did.Parse("did:example:q7ckgxeq1lxmra0r")
-  if err != nil {
-    log.Fatal(err)
-  }
-  fmt.Printf("%#v", d)
+	d, err := did.Parse("did:example:q7ckgxeq1lxmra0r")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("%#v", d)
 }
 ```
 
@@ -38,12 +38,12 @@ following value of DID type.
 
 ```go
 &did.DID{
-  Method:"example",
-  ID:"q7ckgxeq1lxmra0r",
-  IDStrings:[]string{"q7ckgxeq1lxmra0r"},
-  Path:"",
-  PathSegments:[]string(nil),
-  Fragment:""
+	Method:"example",
+	ID:"q7ckgxeq1lxmra0r",
+	IDStrings:[]string{"q7ckgxeq1lxmra0r"},
+	Path:"",
+	PathSegments:[]string(nil),
+	Fragment:""
 }
 ```
 
@@ -58,12 +58,12 @@ which would result in:
 
 ```go
 &did.DID{
-  Method:"example",
-  ID:"q7ckgxeq1lxmra0r",
-  IDStrings:[]string{"q7ckgxeq1lxmra0r"},
-  Path:"abc/pqr",
-  PathSegments:[]string{"abc", "pqr"},
-  Fragment:""
+	Method:"example",
+	ID:"q7ckgxeq1lxmra0r",
+	IDStrings:[]string{"q7ckgxeq1lxmra0r"},
+	Path:"abc/pqr",
+	PathSegments:[]string{"abc", "pqr"},
+	Fragment:""
 }
 ```
 
