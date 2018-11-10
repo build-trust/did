@@ -1,0 +1,9 @@
+# Only store LF in git. On Windows, Git will process all text files and
+# make sure that CRLF is replaced with LF when writing that file to
+# the object database and turn all LF back into CRLF when writing out
+# into the working directory.
+#
+# help.github.com/articles/dealing-with-line-endings
+# adaptivepatchwork.com/2012/03/01/mind-the-end-of-your-line
+# git-scm.com/docs/gitattributes#_end_of_line_conversion
+* text=auto
