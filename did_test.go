@@ -603,6 +603,8 @@ func Test_isNotAlpha(t *testing.T) {
 	}
 }
 
+// nolint: dupl
+// Test_isNotSmallLetter and Test_isNotBigLetter look too similar to the dupl linter, ignore it
 func Test_isNotBigLetter(t *testing.T) {
 	a := []byte{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
 		'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'Z', 'Y', 'Z'}
@@ -620,6 +622,8 @@ func Test_isNotBigLetter(t *testing.T) {
 	}
 }
 
+// nolint: dupl
+// Test_isNotSmallLetter and Test_isNotBigLetter look too similar to the dupl linter, ignore it
 func Test_isNotSmallLetter(t *testing.T) {
 	a := []byte{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
 		'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'z', 'y', 'z'}

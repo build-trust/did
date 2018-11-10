@@ -46,7 +46,7 @@ lint() {
 		gometalinter --install
 	fi
 
-	gometalinter ./...
+	gometalinter --enable-all --line-length=120 ./...
 }
 
 # build the code
