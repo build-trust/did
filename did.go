@@ -287,6 +287,7 @@ func (p *parser) parseID() parserStep {
 //   unreserved    = ALPHA / DIGIT / "-" / "." / "_" / "~"
 //   pct-encoded   = "%" HEXDIG HEXDIG
 //   sub-delims    = "!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / "="
+// nolint: gocyclo
 func (p *parser) parsePath() parserStep {
 	input := p.input
 	inputLength := len(input)
