@@ -12,8 +12,8 @@ func ExampleParse() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("%#v", d)
-	// Output: &did.DID{Method:"example", ID:"q7ckgxeq1lxmra0r", IDStrings:[]string{"q7ckgxeq1lxmra0r"}, Path:"", PathSegments:[]string(nil), Fragment:""}
+	fmt.Printf("Method - %s, ID - %s", d.Method, d.ID)
+	// Output: Method - example, ID - q7ckgxeq1lxmra0r
 }
 
 func ExampleParse_withPath() {
@@ -21,8 +21,8 @@ func ExampleParse_withPath() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("%#v", d)
-	// Output: &did.DID{Method:"example", ID:"q7ckgxeq1lxmra0r", IDStrings:[]string{"q7ckgxeq1lxmra0r"}, Path:"a/b", PathSegments:[]string{"a", "b"}, Fragment:""}
+	fmt.Printf("Method - %s, ID - %s, Path - %s", d.Method, d.ID, d.Path)
+	// Output: Method - example, ID - q7ckgxeq1lxmra0r, Path - a/b
 }
 
 func ExampleParse_withFragment() {
@@ -30,8 +30,8 @@ func ExampleParse_withFragment() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("%#v", d)
-	// Output: &did.DID{Method:"example", ID:"q7ckgxeq1lxmra0r", IDStrings:[]string{"q7ckgxeq1lxmra0r"}, Path:"", PathSegments:[]string(nil), Fragment:"keys-1"}
+	fmt.Printf("Method - %s, ID - %s, Fragment - %s", d.Method, d.ID, d.Fragment)
+	// Output: Method - example, ID - q7ckgxeq1lxmra0r, Fragment - keys-1
 }
 
 func ExampleDID_String() {
