@@ -2,6 +2,7 @@
 
 [![Build Status](https://dev.azure.com/ockam-network/ockam-network-open-source/_apis/build/status/ockam-network.did)](https://dev.azure.com/ockam-network/ockam-network-open-source/_build/latest?definitionId=7)
 [![GoDoc](https://godoc.org/github.com/ockam-network/did?status.svg)](https://godoc.org/github.com/ockam-network/did)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
 `did` is a Go package that provides tools to work with
 [Decentralized Identifiers (DIDs)](https://w3c-ccg.github.io/did-spec).
