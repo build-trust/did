@@ -42,7 +42,7 @@ func TestIsReference(t *testing.T) {
 	})
 }
 
-// nolint
+// nolint: gocyclo, dupl
 func TestString(t *testing.T) {
 
 	t.Run("assembles a DID", func(t *testing.T) {
