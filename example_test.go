@@ -25,6 +25,15 @@ func ExampleParse_withPath() {
 	// Output: Method - example, ID - q7ckgxeq1lxmra0r, Path - a/b
 }
 
+func ExampleParse_withQuery() {
+	d, err := did.Parse("did:example:q7ckgxeq1lxmra0r?dskjsdjj")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Method - %s, ID - %s, Query - %s", d.Method, d.ID, d.Query)
+	// Output: Method - example, ID - q7ckgxeq1lxmra0r, Query - dskjsdjj
+}
+
 func ExampleParse_withFragment() {
 	d, err := did.Parse("did:example:q7ckgxeq1lxmra0r#keys-1")
 	if err != nil {
@@ -50,6 +59,12 @@ func ExampleDID_String_withPathSegments() {
 	d := &did.DID{Method: "example", ID: "q7ckgxeq1lxmra0r", PathSegments: []string{"a", "b"}}
 	fmt.Println(d.String())
 	// Output: did:example:q7ckgxeq1lxmra0r/a/b
+}
+
+func ExampleDID_String_withQuery() {
+	d := &did.DID{Method: "example", ID: "q7ckgxeq1lxmra0r", Query: "abc"}
+	fmt.Println(d.String())
+	// Output: did:example:q7ckgxeq1lxmra0r?abc
 }
 
 func ExampleDID_String_withFragment() {

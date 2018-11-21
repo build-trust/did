@@ -24,6 +24,11 @@ func TestIsReference(t *testing.T) {
 		assert(t, true, d.IsReference())
 	})
 
+	t.Run("returns true if Query", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", Query: "abc"}
+		assert(t, true, d.IsReference())
+	})
+
 	t.Run("returns true if Fragment", func(t *testing.T) {
 		d := &DID{Method: "example", ID: "123", Fragment: "00000"}
 		assert(t, true, d.IsReference())
@@ -64,6 +69,26 @@ func TestString(t *testing.T) {
 	t.Run("includes Path assembled from PathSegements", func(t *testing.T) {
 		d := &DID{Method: "example", ID: "123", PathSegments: []string{"a", "b"}}
 		assert(t, "did:example:123/a/b", d.String())
+	})
+
+	t.Run("includes Query after IDString", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", Query: "abc"}
+		assert(t, "did:example:123?abc", d.String())
+	})
+
+	t.Run("includes Query after Path", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", Path: "x/y", Query: "abc"}
+		assert(t, "did:example:123/x/y?abc", d.String())
+	})
+
+	t.Run("includes Query after before Fragment", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", Fragment: "zyx", Query: "abc"}
+		assert(t, "did:example:123?abc#zyx", d.String())
+	})
+
+	t.Run("includes Query", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", Query: "abc"}
+		assert(t, "did:example:123?abc", d.String())
 	})
 
 	t.Run("includes Fragment", func(t *testing.T) {
@@ -239,6 +264,56 @@ func TestParse(t *testing.T) {
 		assert(t, nil, err)
 	})
 
+	t.Run("succeeds to extract query after idstring", func(t *testing.T) {
+		d, err := Parse("did:a:123?abc")
+		assert(t, nil, err)
+		assert(t, "a", d.Method)
+		assert(t, "123", d.ID)
+		assert(t, "abc", d.Query)
+	})
+
+	t.Run("succeeds to extract query after path", func(t *testing.T) {
+		d, err := Parse("did:a:123/a/b/c?abc")
+		assert(t, nil, err)
+		assert(t, "a", d.Method)
+		assert(t, "123", d.ID)
+		assert(t, "a/b/c", d.Path)
+		assert(t, "abc", d.Query)
+	})
+
+	t.Run("succeeds to extract fragment after query", func(t *testing.T) {
+		d, err := Parse("did:a:123?abc#xyz")
+		assert(t, nil, err)
+		assert(t, "abc", d.Query)
+		assert(t, "xyz", d.Fragment)
+	})
+
+	t.Run("succeeds with percent encoded chars in query", func(t *testing.T) {
+		d, err := Parse("did:a:123?ab%20c")
+		assert(t, nil, err)
+		assert(t, "ab%20c", d.Query)
+	})
+
+	t.Run("returns error if % in query is not followed by 2 hex chars", func(t *testing.T) {
+		dids := []string{
+			"did:a:123:456?%",
+			"did:a:123:456?%a",
+			"did:a:123:456?%!*",
+			"did:a:123:456?%A!",
+			"did:xyz:pqr?%A!",
+			"did:a:123:456?%A%",
+		}
+		for _, did := range dids {
+			_, err := Parse(did)
+			assert(t, false, err == nil, "Input: %s", did)
+		}
+	})
+
+	t.Run("returns error if query has invalid char", func(t *testing.T) {
+		_, err := Parse("did:a:123:456?ssss^sss")
+		assert(t, false, err == nil)
+	})
+
 	t.Run("succeeds to extract fragment", func(t *testing.T) {
 		d, err := Parse("did:a:123:456#keys-1")
 		assert(t, nil, err)
@@ -303,7 +378,7 @@ func Test_isNotValidIDChar(t *testing.T) {
 	}
 }
 
-func Test_isNotValidFragmentChar(t *testing.T) {
+func Test_isNotValidQueryOrFragmentChar(t *testing.T) {
 	a := []byte{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
 		'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
 		'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
@@ -313,12 +388,12 @@ func Test_isNotValidFragmentChar(t *testing.T) {
 		':', '@',
 		'/', '?'}
 	for _, c := range a {
-		assert(t, false, isNotValidFragmentChar(c), "Input: '%c'", c)
+		assert(t, false, isNotValidQueryOrFragmentChar(c), "Input: '%c'", c)
 	}
 
 	a = []byte{'%', '^', '#', ' '}
 	for _, c := range a {
-		assert(t, true, isNotValidFragmentChar(c), "Input: '%c'", c)
+		assert(t, true, isNotValidQueryOrFragmentChar(c), "Input: '%c'", c)
 	}
 }
 

@@ -25,6 +25,14 @@ func BenchmarkParseWithPath(b *testing.B) {
 	parsed = p
 }
 
+func BenchmarkParseWithQuery(b *testing.B) {
+	var p *did.DID
+	for n := 0; n < b.N; n++ {
+		p, _ = did.Parse("did:ockam:amzbjdl8etgpgwoe841sfi6fc4q9yh82?6pkmkw5pteabvtzm7p6qe106ysiawmo")
+	}
+	parsed = p
+}
+
 func BenchmarkParseWithFragment(b *testing.B) {
 	var p *did.DID
 	for n := 0; n < b.N; n++ {
@@ -49,6 +57,14 @@ func BenchmarkUrlParseWithPath(b *testing.B) {
 	var u *url.URL
 	for n := 0; n < b.N; n++ {
 		u, _ = url.Parse("http://amzbjdl8etgpgwoe841sfi6fc4q9yh82.com/6pkmkw5pteabvtzm7p6qe106ysiawm")
+	}
+	parsedURL = u
+}
+
+func BenchmarkUrlParseWithQuery(b *testing.B) {
+	var u *url.URL
+	for n := 0; n < b.N; n++ {
+		u, _ = url.Parse("http://amzbjdl8etgpgwoe841sfi6fc4q9yh82.com?6pkmkw5pteabvtzm7p6qe106ysiawm")
 	}
 	parsedURL = u
 }

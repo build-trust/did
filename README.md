@@ -46,6 +46,7 @@ following value of DID type.
 	IDStrings:[]string{"q7ckgxeq1lxmra0r"},
 	Path:"",
 	PathSegments:[]string(nil),
+	Query:"",
 	Fragment:""
 }
 ```
@@ -66,8 +67,18 @@ which would result in:
 	IDStrings:[]string{"q7ckgxeq1lxmra0r"},
 	Path:"abc/pqr",
 	PathSegments:[]string{"abc", "pqr"},
+	Query:"",
 	Fragment:""
 }
+```
+
+or a [DID Reference](https://w3c-ccg.github.io/did-spec/#dfn-did-reference) with a
+[DID Path](https://w3c-ccg.github.io/did-spec/#dfn-did-path) and a DID Query:
+
+```go
+d, err := did.Parse("did:example:q7ckgxeq1lxmra0r/abc/pqr?xyz")
+fmt.Println(d.Query)
+// Output: xyz
 ```
 
 or a [DID Reference](https://w3c-ccg.github.io/did-spec/#dfn-did-reference) with a
@@ -131,17 +142,19 @@ go test -bench=.
 `did.Parse` included in this package:
 
 ```
-BenchmarkParse-8                  	 5000000	       345 ns/op
-BenchmarkParseWithPath-8          	 3000000	       477 ns/op
-BenchmarkParseWithFragment-8      	 3000000	       542 ns/op
+BenchmarkParse-8                  	 5000000	       365 ns/op
+BenchmarkParseWithPath-8          	 3000000	       500 ns/op
+BenchmarkParseWithQuery-8         	 3000000	       558 ns/op
+BenchmarkParseWithFragment-8      	 3000000	       552 ns/op
 ```
 
 Go's `url.Parse`:
 
 ```
-BenchmarkUrlParse-8               	 3000000	       574 ns/op
-BenchmarkUrlParseWithPath-8       	 3000000	       514 ns/op
-BenchmarkUrlParseWithFragment-8   	 5000000	       382 ns/op
+BenchmarkUrlParse-8               	 3000000	       475 ns/op
+BenchmarkUrlParseWithPath-8       	 3000000	       505 ns/op
+BenchmarkUrlParseWithQuery-8      	 5000000	       294 ns/op
+BenchmarkUrlParseWithFragment-8   	 5000000	       369 ns/op
 ```
 
 ## Contributing

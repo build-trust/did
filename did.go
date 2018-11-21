@@ -29,6 +29,11 @@ type DID struct {
 	// did-path = segment-nz *( "/" segment )
 	PathSegments []string
 
+	// DID Query
+	// https://github.com/w3c-ccg/did-spec/issues/85
+	// did-query = *( pchar / "/" / "?" )
+	Query string
+
 	// DID Fragment, the portion of a DID reference that follows the first hash sign character ("#")
 	// https://w3c-ccg.github.io/did-spec/#dfn-did-fragment
 	Fragment string
@@ -45,10 +50,10 @@ type parser struct {
 // a step in the parser state machine that returns the next step
 type parserStep func() parserStep
 
-// IsReference returns true if a DID has a Path or a Fragment
+// IsReference returns true if a DID has a Path, a Query or a Fragment
 // https://w3c-ccg.github.io/did-spec/#dfn-did-reference
 func (d *DID) IsReference() bool {
-	return (d.Path != "" || len(d.PathSegments) > 0 || d.Fragment != "")
+	return (d.Path != "" || len(d.PathSegments) > 0 || d.Query != "" || d.Fragment != "")
 }
 
 // String encodes a DID struct into a valid DID string.
@@ -85,12 +90,18 @@ func (d *DID) String() string {
 		// write a leading / and then PathSegments joined with / between them
 		buf.WriteByte('/')                                    // nolint, returned error is always nil
 		buf.WriteString(strings.Join(d.PathSegments[:], "/")) // nolint, returned error is always nil
-	} else {
+	}
+
+	if d.Query != "" {
+		// write a leading ? and then Query
+		buf.WriteByte('?')       // nolint, returned error is always nil
+		buf.WriteString(d.Query) // nolint, returned error is always nil
+	}
+
+	if d.Fragment != "" && d.Path == "" && len(d.PathSegments) == 0 {
 		// add fragment only when there is no path
-		if d.Fragment != "" {
-			buf.WriteByte('#')          // nolint, returned error is always nil
-			buf.WriteString(d.Fragment) // nolint, returned error is always nil
-		}
+		buf.WriteByte('#')          // nolint, returned error is always nil
+		buf.WriteString(d.Fragment) // nolint, returned error is always nil
 	}
 
 	return buf.String()
@@ -246,6 +257,12 @@ func (p *parser) parseID() parserStep {
 			break
 		}
 
+		if char == '?' {
+			// encountered ? input may have a query following specific-idstring, parse that next
+			next = p.parseQuery
+			break
+		}
+
 		if char == '#' {
 			// encountered # input may have a fragment following specific-idstring, parse that next
 			next = p.parseFragment
@@ -312,6 +329,12 @@ func (p *parser) parsePath() parserStep {
 			break
 		}
 
+		if char == '?' {
+			// encountered ? input may have a query following path, parse that next
+			next = p.parseQuery
+			break
+		}
+
 		if char == '%' {
 			// a % must be followed by 2 hex digits
 			if (currentIndex+2 >= inputLength) ||
@@ -348,6 +371,73 @@ func (p *parser) parsePath() parserStep {
 	// update parser state
 	p.currentIndex = currentIndex
 	p.out.PathSegments = append(p.out.PathSegments, input[startIndex:currentIndex])
+
+	return next
+}
+
+// parseQuery is a parserStep that extracts a DID Query from a DID Reference
+// from the grammar:
+//   did-query     = *( pchar / "/" / "?" )
+//   pchar         = unreserved / pct-encoded / sub-delims / ":" / "@"
+//   unreserved    = ALPHA / DIGIT / "-" / "." / "_" / "~"
+//   pct-encoded   = "%" HEXDIG HEXDIG
+//   sub-delims    = "!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / "="
+func (p *parser) parseQuery() parserStep {
+	input := p.input
+	inputLength := len(input)
+	currentIndex := p.currentIndex + 1
+	startIndex := currentIndex
+
+	var indexIncrement int
+	var next parserStep
+	var percentEncoded bool
+
+	for {
+		if currentIndex == inputLength {
+			// we've reached the end of input
+			// it's ok for query to be empty, so we don't need a check for that
+			// did-query     = *( pchar / "/" / "?" )
+			break
+		}
+
+		char := input[currentIndex]
+
+		if char == '#' {
+			// encountered # input may have a fragment following the query, parse that next
+			next = p.parseFragment
+			break
+		}
+
+		if char == '%' {
+			// a % must be followed by 2 hex digits
+			if (currentIndex+2 >= inputLength) ||
+				isNotHexDigit(input[currentIndex+1]) ||
+				isNotHexDigit(input[currentIndex+2]) {
+				return p.errorf(currentIndex, "%% is not followed by 2 hex digits")
+			}
+			// if we got here, we're dealing with percent encoded char, jump three chars
+			percentEncoded = true
+			indexIncrement = 3
+		} else {
+			// not pecent encoded
+			percentEncoded = false
+			indexIncrement = 1
+		}
+
+		// did-query = *( pchar / "/" / "?" )
+		// pchar = unreserved / pct-encoded / sub-delims / ":" / "@"
+		// isNotValidQueryOrFragmentChar checks for all the valid chars except pct-encoded
+		if !percentEncoded && isNotValidQueryOrFragmentChar(char) {
+			return p.errorf(currentIndex, "character is not allowed in query - %c", char)
+		}
+
+		// move to the next char
+		currentIndex = currentIndex + indexIncrement
+	}
+
+	// update parser state
+	p.currentIndex = currentIndex
+	p.out.Query = input[startIndex:currentIndex]
 
 	return next
 }
@@ -396,9 +486,9 @@ func (p *parser) parseFragment() parserStep {
 
 		// did-fragment = *( pchar / "/" / "?" )
 		// pchar = unreserved / pct-encoded / sub-delims / ":" / "@"
-		// isNotValidFragmentChar checks for all othe valid chars except pct-encoded
-		if !percentEncoded && isNotValidFragmentChar(char) {
-			return p.errorf(currentIndex, "character is not allowed in fragment")
+		// isNotValidQueryOrFragmentChar checks for all the valid chars except pct-encoded
+		if !percentEncoded && isNotValidQueryOrFragmentChar(char) {
+			return p.errorf(currentIndex, "character is not allowed in fragment - %c", char)
 		}
 
 		// move to the next char
@@ -434,12 +524,12 @@ func isNotValidIDChar(char byte) bool {
 	return isNotAlpha(char) && isNotDigit(char) && char != '.' && char != '-'
 }
 
-// isNotValidFragmentChar returns true if a byte is not allowed in a Fragment
+// isNotValidQueryOrFragmentChar returns true if a byte is not allowed in a Fragment
 // from the grammar:
 //   did-fragment = *( pchar / "/" / "?" )
 //   pchar        = unreserved / pct-encoded / sub-delims / ":" / "@"
 // pct-encoded is not checked in this function
-func isNotValidFragmentChar(char byte) bool {
+func isNotValidQueryOrFragmentChar(char byte) bool {
 	return isNotValidPathChar(char) && char != '/' && char != '?'
 }
 

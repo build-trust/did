@@ -5,7 +5,7 @@
 ; URI Spec:  https://tools.ietf.org/html/rfc3986
 ; ABNF Spec: https://tools.ietf.org/html/rfc5234
 
-did-reference     = did [ "/" did-path ] [ "#" did-fragment ]
+did-reference     = did [ "/" did-path ] [ "?" did-query ] [ "#" did-fragment ]
 
 did               = "did:" method ":" specific-idstring
 
@@ -22,6 +22,10 @@ did-path          = segment-nz *( "/" segment )
 ; did-fragment is identical to a URI fragment and MUST conform to the ABNF of the fragment ABNF rule in [RFC3986]
 ; https://tools.ietf.org/html/rfc3986#section-3.5
 did-fragment      = *( pchar / "/" / "?" )
+
+; did-query is identical to a URI query and MUST conform to the ABNF of the query ABNF rule in [RFC3986]
+; https://tools.ietf.org/html/rfc3986#section-3.4
+did-query         = *( pchar / "/" / "?" )
 
 segment           = *pchar
 segment-nz        = 1*pchar
