@@ -50,14 +50,27 @@ type parser struct {
 // a step in the parser state machine that returns the next step
 type parserStep func() parserStep
 
-// IsReference returns true if a DID has a Path, a Query or a Fragment
+// IsValid returns true if a DID has a Method and either an ID or at least one IDStrings
+func (d *DID) IsValid() bool {
+	return d.Method != "" && (d.ID != "" || len(d.IDStrings) > 0)
+}
+
+// IsReference returns true if a DID is valid and has a Path, a Query or a Fragment
 // https://w3c-ccg.github.io/did-spec/#dfn-did-reference
 func (d *DID) IsReference() bool {
-	return (d.Path != "" || len(d.PathSegments) > 0 || d.Query != "" || d.Fragment != "")
+	return d.IsValid() && (d.Path != "" || len(d.PathSegments) > 0 || d.Query != "" || d.Fragment != "")
 }
 
 // String encodes a DID struct into a valid DID string.
 func (d *DID) String() string {
+	// returns empty if no Method, ID or IDStrings
+	if !d.IsValid() {
+		return ""
+	}
+	return d.validString()
+}
+
+func (d *DID) validString() string {
 	var buf strings.Builder
 
 	// write the did: prefix
@@ -67,9 +80,6 @@ func (d *DID) String() string {
 		// write method followed by a `:`
 		buf.WriteString(d.Method) // nolint, returned error is always nil
 		buf.WriteByte(':')        // nolint, returned error is always nil
-	} else {
-		// if there is no Method, return an empty string
-		return ""
 	}
 
 	if d.ID != "" {
@@ -77,9 +87,6 @@ func (d *DID) String() string {
 	} else if len(d.IDStrings) > 0 {
 		// join IDStrings with a colon to make the ID
 		buf.WriteString(strings.Join(d.IDStrings[:], ":")) // nolint, returned error is always nil
-	} else {
-		// if there is no ID, return an empty string
-		return ""
 	}
 
 	if d.Path != "" {

@@ -38,6 +38,16 @@ func TestIsReference(t *testing.T) {
 		d := &DID{Method: "example", ID: "123", Path: "a/b", Fragment: "00000"}
 		assert(t, true, d.IsReference())
 	})
+
+	t.Run("returns false if no Method", func(t *testing.T) {
+		d := &DID{ID: "123", Path: "a/b"}
+		assert(t, false, d.IsReference())
+	})
+
+	t.Run("returns false if no ID", func(t *testing.T) {
+		d := &DID{Method: "example", Path: "a/b"}
+		assert(t, false, d.IsReference())
+	})
 }
 
 func TestString(t *testing.T) {
