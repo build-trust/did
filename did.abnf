@@ -5,27 +5,32 @@
 ; URI Spec:  https://tools.ietf.org/html/rfc3986
 ; ABNF Spec: https://tools.ietf.org/html/rfc5234
 
-did-reference     = did [ "/" did-path ] [ "?" did-query ] [ "#" did-fragment ]
+did                = "did:" method-name ":" method-specific-id
+method-name        = 1*method-char
+method-char        = %x61-7A / DIGIT
+method-specific-id = *idchar *( ":" *idchar )
+idchar             = ALPHA / DIGIT / "." / "-" / "_"
+did-url            = did *( ";" param ) path-abempty [ "?" query ]
+                     [ "#" fragment ]
+param              = param-name [ "=" param-value ]
+param-name         = 1*param-char
+param-value        = *param-char
+param-char         = ALPHA / DIGIT / "." / "-" / "_" / ":" /
+                     pct-encoded
 
-did               = "did:" method ":" specific-idstring
 
-method            = 1*methodchar
-methodchar        = %x61-7A / DIGIT ; 61-7A is a-z in US-ASCII
-specific-idstring = idstring *( ":" idstring )
-idstring          = 1*idchar
-idchar            = ALPHA / DIGIT / "." / "-"
 
-; did-path is identical to a URI path and MUST conform to the ABNF of the path-rootless ABNF rule in [RFC3986].
+; A generic DID path is identical to a URI path and MUST conform to the path-abempty ABNF rule in [RFC3986]
 ; https://tools.ietf.org/html/rfc3986#section-3.3
-did-path          = segment-nz *( "/" segment )
+path-abempty  = *( "/" segment )
 
-; did-fragment is identical to a URI fragment and MUST conform to the ABNF of the fragment ABNF rule in [RFC3986]
+; A generic DID fragment is identical to a URI fragment and MUST conform to the fragment ABNF rule in [RFC3986]
 ; https://tools.ietf.org/html/rfc3986#section-3.5
-did-fragment      = *( pchar / "/" / "?" )
+fragment      = *( pchar / "/" / "?" )
 
-; did-query is identical to a URI query and MUST conform to the ABNF of the query ABNF rule in [RFC3986]
+; A generic DID query is identical to a URI query and MUST conform to the query ABNF rule in [RFC3986]
 ; https://tools.ietf.org/html/rfc3986#section-3.4
-did-query         = *( pchar / "/" / "?" )
+query         = *( pchar / "/" / "?" )
 
 segment           = *pchar
 segment-nz        = 1*pchar
