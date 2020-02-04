@@ -1,5 +1,5 @@
 // Package did is a set of tools to work with Decentralized Identifiers (DIDs) as described
-// in the DID spec https://w3c-ccg.github.io/did-spec
+// in the DID spec https://w3c.github.io/did-core/
 package did
 
 import (
@@ -7,35 +7,71 @@ import (
 	"strings"
 )
 
-// A DID represents a parsed DID or a DID Reference
+// Param represents a parsed DID param,
+// which contains a name and value. A generic param is defined
+// as a param name and value separated by a colon.
+// generic-param-name:param-value
+// A param may also be method specific, which
+// requires the method name to prefix the param name separated by a colon
+// method-name:param-name.
+// param = param-name [ "=" param-value ]
+// https://w3c.github.io/did-core/#generic-did-parameter-names
+// https://w3c.github.io/did-core/#method-specific-did-parameter-names
+type Param struct {
+	// param-name = 1*param-char
+	// Name may include a method name and param name separated by a colon
+	Name string
+	// param-value = *param-char
+	Value string
+}
+
+// String encodes a Param struct into a valid Param string.
+// Name is required by the grammar. Value is optional
+func (p *Param) String() string {
+	if p.Name == "" {
+		return ""
+	}
+
+	if 0 < len(p.Value) {
+		return p.Name + "=" + p.Value
+	}
+
+	return p.Name
+}
+
+// A DID represents a parsed DID or a DID URL
 type DID struct {
 	// DID Method
-	// https://w3c-ccg.github.io/did-spec#dfn-did-method
+	// https://w3c.github.io/did-core/#method-specific-syntax
 	Method string
 
-	// The specific-idstring component of a DID
+	// The method-specific-id component of a DID
+	// method-specific-id = *idchar *( ":" *idchar )
 	ID string
 
-	// specific-idstring may be composed of multiple `:` separated idstrings
-	// did = "did:" method ":" specific-idstring
-	// specific-idstring = idstring *( ":" idstring )
+	// method-specific-id may be composed of multiple `:` separated idstrings
 	IDStrings []string
 
+	// DID URL
+	// did-url = did *( ";" param ) path-abempty [ "?" query ] [ "#" fragment ]
+	// did-url may contain multiple params, a path, query, and fragment
+	Params []Param
+
 	// DID Path, the portion of a DID reference that follows the first forward slash character.
-	// https://w3c-ccg.github.io/did-spec/#dfn-did-path
+	// https://w3c.github.io/did-core/#path
 	Path string
 
 	// Path may be composed of multiple `/` separated segments
-	// did-path = segment-nz *( "/" segment )
+	// path-abempty  = *( "/" segment )
 	PathSegments []string
 
 	// DID Query
-	// https://github.com/w3c-ccg/did-spec/issues/85
-	// did-query = *( pchar / "/" / "?" )
+	// https://w3c.github.io/did-core/#query
+	// query = *( pchar / "/" / "?" )
 	Query string
 
 	// DID Fragment, the portion of a DID reference that follows the first hash sign character ("#")
-	// https://w3c-ccg.github.io/did-spec/#dfn-did-fragment
+	// https://w3c.github.io/did-core/#fragment
 	Fragment string
 }
 
@@ -50,13 +86,14 @@ type parser struct {
 // a step in the parser state machine that returns the next step
 type parserStep func() parserStep
 
-// IsReference returns true if a DID has a Path, a Query or a Fragment
+// IsURL returns true if a DID has a Path, a Query or a Fragment
 // https://w3c-ccg.github.io/did-spec/#dfn-did-reference
-func (d *DID) IsReference() bool {
-	return (d.Path != "" || len(d.PathSegments) > 0 || d.Query != "" || d.Fragment != "")
+func (d *DID) IsURL() bool {
+	return (len(d.Params) > 0 || d.Path != "" || len(d.PathSegments) > 0 || d.Query != "" || d.Fragment != "")
 }
 
 // String encodes a DID struct into a valid DID string.
+// nolint: gocyclo
 func (d *DID) String() string {
 	var buf strings.Builder
 
@@ -82,6 +119,22 @@ func (d *DID) String() string {
 		return ""
 	}
 
+	if len(d.Params) > 0 {
+		// write a leading ; for each param
+		for _, p := range d.Params {
+			// get a string that represents the param
+			param := p.String()
+			if param != "" {
+				// params must start with a ;
+				buf.WriteByte(';')     // nolint, returned error is always nil
+				buf.WriteString(param) // nolint, returned error is always nil
+			} else {
+				// if a param exists but is empty, return an empty string
+				return ""
+			}
+		}
+	}
+
 	if d.Path != "" {
 		// write a leading / and then Path
 		buf.WriteByte('/')      // nolint, returned error is always nil
@@ -98,7 +151,7 @@ func (d *DID) String() string {
 		buf.WriteString(d.Query) // nolint, returned error is always nil
 	}
 
-	if d.Fragment != "" && d.Path == "" && len(d.PathSegments) == 0 {
+	if d.Fragment != "" {
 		// add fragment only when there is no path
 		buf.WriteByte('#')          // nolint, returned error is always nil
 		buf.WriteString(d.Fragment) // nolint, returned error is always nil
@@ -251,6 +304,12 @@ func (p *parser) parseID() parserStep {
 			break
 		}
 
+		if char == ';' {
+			// encountered ; input may have a parameter, parse that next
+			next = p.parseParamName
+			break
+		}
+
 		if char == '/' {
 			// encountered / input may have a path following specific-idstring, parse that next
 			next = p.parsePath
@@ -292,6 +351,137 @@ func (p *parser) parseID() parserStep {
 	p.out.IDStrings = append(p.out.IDStrings, input[startIndex:currentIndex])
 
 	// return the next parser step
+	return next
+}
+
+// parseParamName is a parserStep that extracts a did-url param-name.
+// A Param struct is created for each param name that is encountered.
+// from the grammar:
+//   param              = param-name [ "=" param-value ]
+//   param-name         = 1*param-char
+//   param-char         = ALPHA / DIGIT / "." / "-" / "_" / ":" / pct-encoded
+func (p *parser) parseParamName() parserStep {
+	input := p.input
+	startIndex := p.currentIndex + 1
+	next := p.paramTransition()
+	currentIndex := p.currentIndex
+
+	if currentIndex == startIndex {
+		// param-name length is zero
+		// from the grammar:
+		//   1*param-char
+		// return error because param-name is empty, ex- did:a::123:456;param-name
+		return p.errorf(currentIndex, "Param name must be at least one char long")
+	}
+
+	// Create a new param with the name
+	p.out.Params = append(p.out.Params, Param{Name: input[startIndex:currentIndex], Value: ""})
+
+	// return the next parser step
+	return next
+}
+
+// parseParamValue is a parserStep that extracts a did-url param-value.
+// A parsed Param value requires that a Param was previously created when parsing a param-name.
+// from the grammar:
+//   param              = param-name [ "=" param-value ]
+//   param-value         = 1*param-char
+//   param-char         = ALPHA / DIGIT / "." / "-" / "_" / ":" / pct-encoded
+func (p *parser) parseParamValue() parserStep {
+	input := p.input
+	startIndex := p.currentIndex + 1
+	next := p.paramTransition()
+	currentIndex := p.currentIndex
+
+	// Get the last Param in the DID and append the value
+	// values may be empty according to the grammar- *param-char
+	p.out.Params[len(p.out.Params)-1].Value = input[startIndex:currentIndex]
+
+	// return the next parser step
+	return next
+}
+
+// paramTransition is a parserStep that extracts and transitions a param-name or
+// param-value.
+// nolint: gocyclo
+func (p *parser) paramTransition() parserStep {
+	input := p.input
+	inputLength := len(input)
+	currentIndex := p.currentIndex + 1
+
+	var indexIncrement int
+	var next parserStep
+	var percentEncoded bool
+
+	for {
+		if currentIndex == inputLength {
+			// we've reached end of input, no next state
+			next = nil
+			break
+		}
+
+		char := input[currentIndex]
+
+		if char == ';' {
+			// encountered : input may have another param, parse paramName again
+			next = p.parseParamName
+			break
+		}
+
+		// Separate steps for name and value?
+		if char == '=' {
+			// parse param value
+			next = p.parseParamValue
+			break
+		}
+
+		if char == '/' {
+			// encountered / input may have a path following current param, parse that next
+			next = p.parsePath
+			break
+		}
+
+		if char == '?' {
+			// encountered ? input may have a query following current param, parse that next
+			next = p.parseQuery
+			break
+		}
+
+		if char == '#' {
+			// encountered # input may have a fragment following current param, parse that next
+			next = p.parseFragment
+			break
+		}
+
+		if char == '%' {
+			// a % must be followed by 2 hex digits
+			if (currentIndex+2 >= inputLength) ||
+				isNotHexDigit(input[currentIndex+1]) ||
+				isNotHexDigit(input[currentIndex+2]) {
+				return p.errorf(currentIndex, "%% is not followed by 2 hex digits")
+			}
+			// if we got here, we're dealing with percent encoded char, jump three chars
+			percentEncoded = true
+			indexIncrement = 3
+		} else {
+			// not percent encoded
+			percentEncoded = false
+			indexIncrement = 1
+		}
+
+		// make sure current char is a valid param-char
+		// idchar = ALPHA / DIGIT / "." / "-"
+		if !percentEncoded && isNotValidParamChar(char) {
+			return p.errorf(currentIndex, "character is not allowed in param - %c", char)
+		}
+
+		// move to the next char
+		currentIndex = currentIndex + indexIncrement
+	}
+
+	// set parser state
+	p.currentIndex = currentIndex
+
 	return next
 }
 
@@ -518,10 +708,18 @@ func (p *parser) errorf(index int, format string, args ...interface{}) parserSte
 // See output of `go build -gcflags -m` to confirm
 
 // isNotValidIDChar returns true if a byte is not allowed in a ID
-// from the greammar:
+// from the grammar:
 //   idchar = ALPHA / DIGIT / "." / "-"
 func isNotValidIDChar(char byte) bool {
 	return isNotAlpha(char) && isNotDigit(char) && char != '.' && char != '-'
+}
+
+// isNotValidParamChar returns true if a byte is not allowed in a param-name
+// or param-value from the grammar:
+//   idchar = ALPHA / DIGIT / "." / "-" / "_" / ":"
+func isNotValidParamChar(char byte) bool {
+	return isNotAlpha(char) && isNotDigit(char) &&
+		char != '.' && char != '-' && char != '_' && char != ':'
 }
 
 // isNotValidQueryOrFragmentChar returns true if a byte is not allowed in a Fragment

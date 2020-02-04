@@ -8,35 +8,40 @@ import (
 	"testing"
 )
 
-func TestIsReference(t *testing.T) {
+func TestIsURL(t *testing.T) {
 	t.Run("returns false if no Path or Fragment", func(t *testing.T) {
 		d := &DID{Method: "example", ID: "123"}
-		assert(t, false, d.IsReference())
+		assert(t, false, d.IsURL())
+	})
+
+	t.Run("returns true if Params", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", Params: []Param{{Name: "foo", Value: "bar"}}}
+		assert(t, true, d.IsURL())
 	})
 
 	t.Run("returns true if Path", func(t *testing.T) {
 		d := &DID{Method: "example", ID: "123", Path: "a/b"}
-		assert(t, true, d.IsReference())
+		assert(t, true, d.IsURL())
 	})
 
 	t.Run("returns true if PathSegements", func(t *testing.T) {
 		d := &DID{Method: "example", ID: "123", PathSegments: []string{"a", "b"}}
-		assert(t, true, d.IsReference())
+		assert(t, true, d.IsURL())
 	})
 
 	t.Run("returns true if Query", func(t *testing.T) {
 		d := &DID{Method: "example", ID: "123", Query: "abc"}
-		assert(t, true, d.IsReference())
+		assert(t, true, d.IsURL())
 	})
 
 	t.Run("returns true if Fragment", func(t *testing.T) {
 		d := &DID{Method: "example", ID: "123", Fragment: "00000"}
-		assert(t, true, d.IsReference())
+		assert(t, true, d.IsURL())
 	})
 
 	t.Run("returns true if Path and Fragment", func(t *testing.T) {
 		d := &DID{Method: "example", ID: "123", Path: "a/b", Fragment: "00000"}
-		assert(t, true, d.IsReference())
+		assert(t, true, d.IsURL())
 	})
 }
 
@@ -61,6 +66,37 @@ func TestString(t *testing.T) {
 		assert(t, "", d.String())
 	})
 
+	t.Run("returns empty string if Param Name does not exist", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", Params: []Param{{Name: "", Value: "agent"}}}
+		assert(t, "", d.String())
+	})
+
+	t.Run("returns name string if Param Value does not exist", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", Params: []Param{{Name: "service", Value: ""}}}
+		assert(t, "did:example:123;service", d.String())
+	})
+
+	t.Run("returns param string with name and value", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", Params: []Param{{Name: "service", Value: "agent"}}}
+		assert(t, "did:example:123;service=agent", d.String())
+	})
+
+	t.Run("includes Param generic", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", Params: []Param{{Name: "service", Value: "agent"}}}
+		assert(t, "did:example:123;service=agent", d.String())
+	})
+
+	t.Run("includes Param method", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", Params: []Param{{Name: "foo:bar", Value: "high"}}}
+		assert(t, "did:example:123;foo:bar=high", d.String())
+	})
+
+	t.Run("includes Param generic and method", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123",
+			Params: []Param{{Name: "service", Value: "agent"}, {Name: "foo:bar", Value: "high"}}}
+		assert(t, "did:example:123;service=agent;foo:bar=high", d.String())
+	})
+
 	t.Run("includes Path", func(t *testing.T) {
 		d := &DID{Method: "example", ID: "123", Path: "a/b"}
 		assert(t, "did:example:123/a/b", d.String())
@@ -71,14 +107,32 @@ func TestString(t *testing.T) {
 		assert(t, "did:example:123/a/b", d.String())
 	})
 
+	t.Run("includes Path after Param", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123",
+			Params: []Param{{Name: "service", Value: "agent"}}, Path: "a/b"}
+		assert(t, "did:example:123;service=agent/a/b", d.String())
+	})
+
 	t.Run("includes Query after IDString", func(t *testing.T) {
 		d := &DID{Method: "example", ID: "123", Query: "abc"}
 		assert(t, "did:example:123?abc", d.String())
 	})
 
+	t.Run("include Query after Param", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", Query: "abc",
+			Params: []Param{{Name: "service", Value: "agent"}}}
+		assert(t, "did:example:123;service=agent?abc", d.String())
+	})
+
 	t.Run("includes Query after Path", func(t *testing.T) {
 		d := &DID{Method: "example", ID: "123", Path: "x/y", Query: "abc"}
 		assert(t, "did:example:123/x/y?abc", d.String())
+	})
+
+	t.Run("includes Query after Param and Path", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", Path: "x/y", Query: "abc",
+			Params: []Param{{Name: "service", Value: "agent"}}}
+		assert(t, "did:example:123;service=agent/x/y?abc", d.String())
 	})
 
 	t.Run("includes Query after before Fragment", func(t *testing.T) {
@@ -96,14 +150,9 @@ func TestString(t *testing.T) {
 		assert(t, "did:example:123#00000", d.String())
 	})
 
-	t.Run("does not include Fragment if Path is present", func(t *testing.T) {
-		d := &DID{Method: "example", ID: "123", Path: "a/b", Fragment: "00000"}
-		assert(t, "did:example:123/a/b", d.String())
-	})
-
-	t.Run("does not include Fragment if PathSegments is present", func(t *testing.T) {
-		d := &DID{Method: "example", ID: "123", PathSegments: []string{"a", "b"}, Fragment: "00000"}
-		assert(t, "did:example:123/a/b", d.String())
+	t.Run("includes Fragment after Param", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", Fragment: "00000"}
+		assert(t, "did:example:123#00000", d.String())
 	})
 }
 
@@ -201,6 +250,175 @@ func TestParse(t *testing.T) {
 	t.Run("returns error if ID has an invalid char", func(t *testing.T) {
 		_, err := Parse("did:a:1&&111")
 		assert(t, false, err == nil)
+	})
+
+	t.Run("returns error if param name is empty", func(t *testing.T) {
+		_, err := Parse("did:a:123:456;")
+		assert(t, false, err == nil)
+	})
+
+	t.Run("returns error if Param name has an invalid char", func(t *testing.T) {
+		_, err := Parse("did:a:123:456;serv&ce")
+		assert(t, false, err == nil)
+	})
+
+	t.Run("returns error if Param value has an invalid char", func(t *testing.T) {
+		_, err := Parse("did:a:123:456;service=ag&nt")
+		assert(t, false, err == nil)
+	})
+
+	t.Run("returns error if Param name has an invalid percent encoded", func(t *testing.T) {
+		_, err := Parse("did:a:123:456;ser%2ge")
+		assert(t, false, err == nil)
+	})
+
+	t.Run("returns error if Param does not exist for value", func(t *testing.T) {
+		_, err := Parse("did:a:123:456;=value")
+		assert(t, false, err == nil)
+	})
+
+	// nolint: dupl
+	// test for params look similar to linter
+	t.Run("succeeds to extract generic param with name and value", func(t *testing.T) {
+		d, err := Parse("did:a:123:456;service==agent")
+		assert(t, nil, err)
+		assert(t, 1, len(d.Params))
+		assert(t, "service=agent", d.Params[0].String())
+		assert(t, "service", d.Params[0].Name)
+		assert(t, "agent", d.Params[0].Value)
+	})
+
+	// nolint: dupl
+	// test for params look similar to linter
+	t.Run("succeeds to extract generic param with name only", func(t *testing.T) {
+		d, err := Parse("did:a:123:456;service")
+		assert(t, nil, err)
+		assert(t, 1, len(d.Params))
+		assert(t, "service", d.Params[0].String())
+		assert(t, "service", d.Params[0].Name)
+		assert(t, "", d.Params[0].Value)
+	})
+
+	// nolint: dupl
+	// test for params look similar to linter
+	t.Run("succeeds to extract generic param with name only and empty param", func(t *testing.T) {
+		d, err := Parse("did:a:123:456;service=")
+		assert(t, nil, err)
+		assert(t, 1, len(d.Params))
+		assert(t, "service", d.Params[0].String())
+		assert(t, "service", d.Params[0].Name)
+		assert(t, "", d.Params[0].Value)
+	})
+
+	// nolint: dupl
+	// test for params look similar to linter
+	t.Run("succeeds to extract method param with name and value", func(t *testing.T) {
+		d, err := Parse("did:a:123:456;foo:bar=baz")
+		assert(t, nil, err)
+		assert(t, 1, len(d.Params))
+		assert(t, "foo:bar=baz", d.Params[0].String())
+		assert(t, "foo:bar", d.Params[0].Name)
+		assert(t, "baz", d.Params[0].Value)
+	})
+
+	// nolint: dupl
+	// test for params look similar to linter
+	t.Run("succeeds to extract method param with name only", func(t *testing.T) {
+		d, err := Parse("did:a:123:456;foo:bar")
+		assert(t, nil, err)
+		assert(t, 1, len(d.Params))
+		assert(t, "foo:bar", d.Params[0].String())
+		assert(t, "foo:bar", d.Params[0].Name)
+		assert(t, "", d.Params[0].Value)
+	})
+
+	// nolint: dupl
+	// test for params look similar to linter
+	t.Run("succeeds with percent encoded chars in param name and value", func(t *testing.T) {
+		d, err := Parse("did:a:123:456;serv%20ice=val%20ue")
+		assert(t, nil, err)
+		assert(t, 1, len(d.Params))
+		assert(t, "serv%20ice=val%20ue", d.Params[0].String())
+		assert(t, "serv%20ice", d.Params[0].Name)
+		assert(t, "val%20ue", d.Params[0].Value)
+	})
+
+	// nolint: dupl
+	// test for params look similar to linter
+	t.Run("succeeds to extract multiple generic params with name only", func(t *testing.T) {
+		d, err := Parse("did:a:123:456;foo;bar")
+		assert(t, nil, err)
+		assert(t, 2, len(d.Params))
+		assert(t, "foo", d.Params[0].Name)
+		assert(t, "", d.Params[0].Value)
+		assert(t, "bar", d.Params[1].Name)
+		assert(t, "", d.Params[1].Value)
+	})
+
+	// nolint: dupl
+	// test for params look similar to linter
+	t.Run("succeeds to extract multiple params with names and values", func(t *testing.T) {
+		d, err := Parse("did:a:123:456;service=agent;foo:bar=baz")
+		assert(t, nil, err)
+		assert(t, 2, len(d.Params))
+		assert(t, "service", d.Params[0].Name)
+		assert(t, "agent", d.Params[0].Value)
+		assert(t, "foo:bar", d.Params[1].Name)
+		assert(t, "baz", d.Params[1].Value)
+	})
+
+	// nolint: dupl
+	// test for params look similar to linter
+	t.Run("succeeds to extract path after generic param", func(t *testing.T) {
+		d, err := Parse("did:a:123:456;service==value/a/b")
+		assert(t, nil, err)
+		assert(t, 1, len(d.Params))
+		assert(t, "service=value", d.Params[0].String())
+		assert(t, "service", d.Params[0].Name)
+		assert(t, "value", d.Params[0].Value)
+
+		segments := d.PathSegments
+		assert(t, "a", segments[0])
+		assert(t, "b", segments[1])
+	})
+
+	// nolint: dupl
+	// test for params look similar to linter
+	t.Run("succeeds to extract path after generic param name and no value", func(t *testing.T) {
+		d, err := Parse("did:a:123:456;service=/a/b")
+		assert(t, nil, err)
+		assert(t, 1, len(d.Params))
+		assert(t, "service", d.Params[0].String())
+		assert(t, "service", d.Params[0].Name)
+		assert(t, "", d.Params[0].Value)
+
+		segments := d.PathSegments
+		assert(t, "a", segments[0])
+		assert(t, "b", segments[1])
+	})
+
+	// nolint: dupl
+	// test for params look similar to linter
+	t.Run("succeeds to extract query after generic param", func(t *testing.T) {
+		d, err := Parse("did:a:123:456;service=value?abc")
+		assert(t, nil, err)
+		assert(t, 1, len(d.Params))
+		assert(t, "service=value", d.Params[0].String())
+		assert(t, "service", d.Params[0].Name)
+		assert(t, "value", d.Params[0].Value)
+		assert(t, "abc", d.Query)
+	})
+
+	// nolint: dupl
+	// test for params look similar to linter
+	t.Run("succeeds to extract fragment after generic param", func(t *testing.T) {
+		d, err := Parse("did:a:123:456;service=value#xyz")
+		assert(t, nil, err)
+		assert(t, 1, len(d.Params))
+		assert(t, "service=value", d.Params[0].String())
+		assert(t, "service", d.Params[0].Name)
+		assert(t, "value", d.Params[0].Value)
+		assert(t, "xyz", d.Fragment)
 	})
 
 	t.Run("succeeds to extract path", func(t *testing.T) {
@@ -358,6 +576,23 @@ func Test_errorf(t *testing.T) {
 	e := p.err.Error()
 	if e != "a,b" {
 		t.Errorf("err message is: '%s' expected: 'a,b'", e)
+	}
+}
+
+func Test_isNotValidParamChar(t *testing.T) {
+	a := []byte{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+		'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+		'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+		'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+		'.', '-', '_', ':'}
+	for _, c := range a {
+		assert(t, false, isNotValidParamChar(c), "Input: '%c'", c)
+	}
+
+	a = []byte{'%', '^', '#', ' ', '~', '!', '$', '&', '\'', '(', ')', '*', '+', ',', ';', '=', '@', '/', '?'}
+	for _, c := range a {
+		assert(t, true, isNotValidParamChar(c), "Input: '%c'", c)
 	}
 }
 

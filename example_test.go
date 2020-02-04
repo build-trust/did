@@ -73,20 +73,20 @@ func ExampleDID_String_withFragment() {
 	// Output: did:example:q7ckgxeq1lxmra0r#keys-1
 }
 
-func ExampleDID_IsReference_withPath() {
+func ExampleDID_IsURL_withPath() {
 	d := &did.DID{Method: "example", ID: "q7ckgxeq1lxmra0r", Path: "a/b"}
-	fmt.Println(d.IsReference())
+	fmt.Println(d.IsURL())
 	// Output: true
 }
 
-func ExampleDID_IsReference_withFragment() {
+func ExampleDID_IsURL_withFragment() {
 	d := &did.DID{Method: "example", ID: "q7ckgxeq1lxmra0r", Fragment: "keys-1"}
-	fmt.Println(d.IsReference())
+	fmt.Println(d.IsURL())
 	// Output: true
 }
 
-func ExampleDID_IsReference_noPathOrFragment() {
+func ExampleDID_IsURL_noPathOrFragment() {
 	d := &did.DID{Method: "example", ID: "q7ckgxeq1lxmra0r"}
-	fmt.Println(d.IsReference())
+	fmt.Println(d.IsURL())
 	// Output: false
 }
