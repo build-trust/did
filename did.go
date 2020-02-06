@@ -76,8 +76,8 @@ type parserStep func() parserStep
 
 // IsReference returns true if a DID has a Path, a Query or a Fragment
 // https://w3c-ccg.github.io/did-spec/#dfn-did-reference
-func (d *DID) IsReference() bool {
-	return (d.Path != "" || len(d.PathSegments) > 0 || d.Query != "" || d.Fragment != "")
+func (d *DID) IsURL() bool {
+	return (len(d.Params) > 0 || d.Path != "" || len(d.PathSegments) > 0 || d.Query != "" || d.Fragment != "")
 }
 
 // String encodes a DID struct into a valid DID string.
