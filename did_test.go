@@ -8,35 +8,40 @@ import (
 	"testing"
 )
 
-func TestIsReference(t *testing.T) {
+func TestIsURL(t *testing.T) {
 	t.Run("returns false if no Path or Fragment", func(t *testing.T) {
 		d := &DID{Method: "example", ID: "123"}
-		assert(t, false, d.IsReference())
+		assert(t, false, d.IsURL())
+	})
+	
+	t.Run("returns true if Params", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", Params: []Param{Param{Name:"foo", Value:"bar"}}}
+		assert(t, true, d.IsURL())
 	})
 
 	t.Run("returns true if Path", func(t *testing.T) {
 		d := &DID{Method: "example", ID: "123", Path: "a/b"}
-		assert(t, true, d.IsReference())
+		assert(t, true, d.IsURL())
 	})
 
 	t.Run("returns true if PathSegements", func(t *testing.T) {
 		d := &DID{Method: "example", ID: "123", PathSegments: []string{"a", "b"}}
-		assert(t, true, d.IsReference())
+		assert(t, true, d.IsURL())
 	})
 
 	t.Run("returns true if Query", func(t *testing.T) {
 		d := &DID{Method: "example", ID: "123", Query: "abc"}
-		assert(t, true, d.IsReference())
+		assert(t, true, d.IsURL())
 	})
 
 	t.Run("returns true if Fragment", func(t *testing.T) {
 		d := &DID{Method: "example", ID: "123", Fragment: "00000"}
-		assert(t, true, d.IsReference())
+		assert(t, true, d.IsURL())
 	})
 
 	t.Run("returns true if Path and Fragment", func(t *testing.T) {
 		d := &DID{Method: "example", ID: "123", Path: "a/b", Fragment: "00000"}
-		assert(t, true, d.IsReference())
+		assert(t, true, d.IsURL())
 	})
 }
 
