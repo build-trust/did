@@ -1,5 +1,5 @@
 // Package did is a set of tools to work with Decentralized Identifiers (DIDs) as described
-// in the DID spec https://w3c-ccg.github.io/did-spec
+// in the DID spec https://w3c.github.io/did-core/
 package did
 
 import (
@@ -7,35 +7,59 @@ import (
 	"strings"
 )
 
-// A DID represents a parsed DID or a DID Reference
+// Param represents a parsed DID param,
+// which contains a name and value. A generic param is defined
+// as a param name and value separated by a colon.
+// generic-param-name:param-value
+// A param may also be method specific, which
+// requires the method name to prefix the param name separated by a colon
+// method-name:param-name.
+// param = param-name [ "=" param-value ]
+// https://w3c.github.io/did-core/#generic-did-parameter-names
+// https://w3c.github.io/did-core/#method-specific-did-parameter-names
+type Param struct {
+	// param-name = 1*param-char
+	// Name may include a method name and param name separated by a colon
+	Name string
+	// param-value = *param-char
+	Value string
+}
+
+// A DID represents a parsed DID or a DID URL
 type DID struct {
 	// DID Method
-	// https://w3c-ccg.github.io/did-spec#dfn-did-method
+	// https://w3c.github.io/did-core/#method-specific-syntax
 	Method string
 
-	// The specific-idstring component of a DID
+	// The method-specific-id component of a DID
+	// method-specific-id = *idchar *( ":" *idchar )
 	ID string
 
-	// specific-idstring may be composed of multiple `:` separated idstrings
-	// did = "did:" method ":" specific-idstring
-	// specific-idstring = idstring *( ":" idstring )
+	// method-specific-id may be composed of multiple `:` separated idstrings
 	IDStrings []string
 
+	// did-url
+	// did-url = did *( ";" param )
+	// did-url may contain params, a path, query, and fragment
+
+	// A did-url may contain multiple method params
+	Params []Param
+
 	// DID Path, the portion of a DID reference that follows the first forward slash character.
-	// https://w3c-ccg.github.io/did-spec/#dfn-did-path
+	// https://w3c.github.io/did-core/#path
 	Path string
 
 	// Path may be composed of multiple `/` separated segments
-	// did-path = segment-nz *( "/" segment )
+	// path-abempty  = *( "/" segment )
 	PathSegments []string
 
 	// DID Query
-	// https://github.com/w3c-ccg/did-spec/issues/85
-	// did-query = *( pchar / "/" / "?" )
+	// https://w3c.github.io/did-core/#query
+	// query = *( pchar / "/" / "?" )
 	Query string
 
 	// DID Fragment, the portion of a DID reference that follows the first hash sign character ("#")
-	// https://w3c-ccg.github.io/did-spec/#dfn-did-fragment
+	// https://w3c.github.io/did-core/#fragment
 	Fragment string
 }
 
