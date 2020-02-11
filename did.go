@@ -25,6 +25,15 @@ type Param struct {
 	Value string
 }
 
+// String encodes a Param struct into a valid Param string.
+func (p *Param) String() string {
+	if p.Name == "" || p.Value == "" {
+		return ""
+	}
+
+	return p.Name + "=" + p.Value
+}
+
 // A DID represents a parsed DID or a DID URL
 type DID struct {
 	// DID Method
@@ -74,13 +83,14 @@ type parser struct {
 // a step in the parser state machine that returns the next step
 type parserStep func() parserStep
 
-// IsReference returns true if a DID has a Path, a Query or a Fragment
+// IsURL returns true if a DID has a Path, a Query or a Fragment
 // https://w3c-ccg.github.io/did-spec/#dfn-did-reference
 func (d *DID) IsURL() bool {
 	return (len(d.Params) > 0 || d.Path != "" || len(d.PathSegments) > 0 || d.Query != "" || d.Fragment != "")
 }
 
 // String encodes a DID struct into a valid DID string.
+// nolint: gocyclo
 func (d *DID) String() string {
 	var buf strings.Builder
 
@@ -104,6 +114,22 @@ func (d *DID) String() string {
 	} else {
 		// if there is no ID, return an empty string
 		return ""
+	}
+
+	if len(d.Params) > 0 {
+		// write a leading ; for each param
+		for _, p := range d.Params {
+			// get a string that represents the param
+			param := p.String()
+			if param != "" {
+				// params must start with a ;
+				buf.WriteByte(';')     // nolint, returned error is always nil
+				buf.WriteString(param) // nolint, returned error is always nil
+			} else {
+				// if a param exists but is empty, return an empty string
+				return ""
+			}
+		}
 	}
 
 	if d.Path != "" {
