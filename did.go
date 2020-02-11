@@ -568,7 +568,7 @@ func (p *parser) errorf(index int, format string, args ...interface{}) parserSte
 // See output of `go build -gcflags -m` to confirm
 
 // isNotValidIDChar returns true if a byte is not allowed in a ID
-// from the greammar:
+// from the grammar:
 //   idchar = ALPHA / DIGIT / "." / "-"
 func isNotValidIDChar(char byte) bool {
 	return isNotAlpha(char) && isNotDigit(char) && char != '.' && char != '-'
