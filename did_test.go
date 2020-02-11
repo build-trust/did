@@ -13,9 +13,9 @@ func TestIsURL(t *testing.T) {
 		d := &DID{Method: "example", ID: "123"}
 		assert(t, false, d.IsURL())
 	})
-	
+
 	t.Run("returns true if Params", func(t *testing.T) {
-		d := &DID{Method: "example", ID: "123", Params: []Param{Param{Name:"foo", Value:"bar"}}}
+		d := &DID{Method: "example", ID: "123", Params: []Param{{Name: "foo", Value: "bar"}}}
 		assert(t, true, d.IsURL())
 	})
 
