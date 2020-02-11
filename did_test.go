@@ -66,6 +66,32 @@ func TestString(t *testing.T) {
 		assert(t, "", d.String())
 	})
 
+	t.Run("returns empty string if Param Name does not exist", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", Params: []Param{{Name: "", Value: "agent"}}}
+		assert(t, "", d.String())
+	})
+
+	t.Run("returns empty string if Param Value does not exist", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", Params: []Param{{Name: "Service", Value: ""}}}
+		assert(t, "", d.String())
+	})
+
+	t.Run("includes Param generic", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", Params: []Param{{Name: "service", Value: "agent"}}}
+		assert(t, "did:example:123;service=agent", d.String())
+	})
+
+	t.Run("includes Param method", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", Params: []Param{{Name: "foo:bar", Value: "high"}}}
+		assert(t, "did:example:123;foo:bar=high", d.String())
+	})
+
+	t.Run("includes Param generic and method", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123",
+			Params: []Param{{Name: "service", Value: "agent"}, {Name: "foo:bar", Value: "high"}}}
+		assert(t, "did:example:123;service=agent;foo:bar=high", d.String())
+	})
+
 	t.Run("includes Path", func(t *testing.T) {
 		d := &DID{Method: "example", ID: "123", Path: "a/b"}
 		assert(t, "did:example:123/a/b", d.String())
@@ -76,14 +102,32 @@ func TestString(t *testing.T) {
 		assert(t, "did:example:123/a/b", d.String())
 	})
 
+	t.Run("includes Path after Param", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123",
+			Params: []Param{{Name: "service", Value: "agent"}}, Path: "a/b"}
+		assert(t, "did:example:123;service=agent/a/b", d.String())
+	})
+
 	t.Run("includes Query after IDString", func(t *testing.T) {
 		d := &DID{Method: "example", ID: "123", Query: "abc"}
 		assert(t, "did:example:123?abc", d.String())
 	})
 
+	t.Run("include Query after Param", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", Query: "abc",
+			Params: []Param{{Name: "service", Value: "agent"}}}
+		assert(t, "did:example:123;service=agent?abc", d.String())
+	})
+
 	t.Run("includes Query after Path", func(t *testing.T) {
 		d := &DID{Method: "example", ID: "123", Path: "x/y", Query: "abc"}
 		assert(t, "did:example:123/x/y?abc", d.String())
+	})
+
+	t.Run("includes Query after Param and Path", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", Path: "x/y", Query: "abc",
+			Params: []Param{{Name: "service", Value: "agent"}}}
+		assert(t, "did:example:123;service=agent/x/y?abc", d.String())
 	})
 
 	t.Run("includes Query after before Fragment", func(t *testing.T) {
@@ -97,6 +141,11 @@ func TestString(t *testing.T) {
 	})
 
 	t.Run("includes Fragment", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", Fragment: "00000"}
+		assert(t, "did:example:123#00000", d.String())
+	})
+
+	t.Run("includes Fragment after Param", func(t *testing.T) {
 		d := &DID{Method: "example", ID: "123", Fragment: "00000"}
 		assert(t, "did:example:123#00000", d.String())
 	})
