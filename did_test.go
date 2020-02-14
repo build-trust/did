@@ -71,9 +71,9 @@ func TestString(t *testing.T) {
 		assert(t, "", d.String())
 	})
 
-	t.Run("returns empty string if Param Value does not exist", func(t *testing.T) {
-		d := &DID{Method: "example", ID: "123", Params: []Param{{Name: "Service", Value: ""}}}
-		assert(t, "", d.String())
+	t.Run("returns name string if Param Value does not exist", func(t *testing.T) {
+		d := &DID{Method: "example", ID: "123", Params: []Param{{Name: "service", Value: ""}}}
+		assert(t, "did:example:123;service", d.String())
 	})
 
 	t.Run("includes Param generic", func(t *testing.T) {
