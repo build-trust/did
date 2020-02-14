@@ -26,12 +26,17 @@ type Param struct {
 }
 
 // String encodes a Param struct into a valid Param string.
+// Name is required by the grammar. Value is optional
 func (p *Param) String() string {
-	if p.Name == "" || p.Value == "" {
+	if p.Name == "" {
 		return ""
 	}
 
-	return p.Name + "=" + p.Value
+	if 0 < len(p.Value) {
+		return p.Name + "=" + p.Value
+	}
+
+	return p.Name
 }
 
 // A DID represents a parsed DID or a DID URL
