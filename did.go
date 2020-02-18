@@ -52,11 +52,9 @@ type DID struct {
 	// method-specific-id may be composed of multiple `:` separated idstrings
 	IDStrings []string
 
-	// did-url
-	// did-url = did *( ";" param )
-	// did-url may contain params, a path, query, and fragment
-
-	// A did-url may contain multiple method params
+	// DID URL
+	// did-url = did *( ";" param ) path-abempty [ "?" query ] [ "#" fragment ]
+	// did-url may contain multiple params, a path, query, and fragment
 	Params []Param
 
 	// DID Path, the portion of a DID reference that follows the first forward slash character.
@@ -306,6 +304,12 @@ func (p *parser) parseID() parserStep {
 			break
 		}
 
+		if char == ';' {
+			// encountered ; input may have a parameter, parse that next
+			next = p.parseParamName
+			break
+		}
+
 		if char == '/' {
 			// encountered / input may have a path following specific-idstring, parse that next
 			next = p.parsePath
@@ -347,6 +351,137 @@ func (p *parser) parseID() parserStep {
 	p.out.IDStrings = append(p.out.IDStrings, input[startIndex:currentIndex])
 
 	// return the next parser step
+	return next
+}
+
+// parseParamName is a parserStep that extracts a did-url param-name.
+// A Param struct is created for each param name that is encountered.
+// from the grammar:
+//   param              = param-name [ "=" param-value ]
+//   param-name         = 1*param-char
+//   param-char         = ALPHA / DIGIT / "." / "-" / "_" / ":" / pct-encoded
+func (p *parser) parseParamName() parserStep {
+	input := p.input
+	startIndex := p.currentIndex + 1
+	next := p.paramTransition()
+	currentIndex := p.currentIndex
+
+	if currentIndex == startIndex {
+		// param-name length is zero
+		// from the grammar:
+		//   1*param-char
+		// return error because param-name is empty, ex- did:a::123:456;param-name
+		return p.errorf(currentIndex, "Param name must be at least one char long")
+	}
+
+	// Create a new param with the name
+	p.out.Params = append(p.out.Params, Param{Name: input[startIndex:currentIndex], Value: ""})
+
+	// return the next parser step
+	return next
+}
+
+// parseParamValue is a parserStep that extracts a did-url param-value.
+// A parsed Param value requires that a Param was previously created when parsing a param-name.
+// from the grammar:
+//   param              = param-name [ "=" param-value ]
+//   param-value         = 1*param-char
+//   param-char         = ALPHA / DIGIT / "." / "-" / "_" / ":" / pct-encoded
+func (p *parser) parseParamValue() parserStep {
+	input := p.input
+	startIndex := p.currentIndex + 1
+	next := p.paramTransition()
+	currentIndex := p.currentIndex
+
+	// Get the last Param in the DID and append the value
+	// values may be empty according to the grammar- *param-char
+	p.out.Params[len(p.out.Params)-1].Value = input[startIndex:currentIndex]
+
+	// return the next parser step
+	return next
+}
+
+// paramTransition is a parserStep that extracts and transitions a param-name or
+// param-value.
+// nolint: gocyclo
+func (p *parser) paramTransition() parserStep {
+	input := p.input
+	inputLength := len(input)
+	currentIndex := p.currentIndex + 1
+
+	var indexIncrement int
+	var next parserStep
+	var percentEncoded bool
+
+	for {
+		if currentIndex == inputLength {
+			// we've reached end of input, no next state
+			next = nil
+			break
+		}
+
+		char := input[currentIndex]
+
+		if char == ';' {
+			// encountered : input may have another param, parse paramName again
+			next = p.parseParamName
+			break
+		}
+
+		// Separate steps for name and value?
+		if char == '=' {
+			// parse param value
+			next = p.parseParamValue
+			break
+		}
+
+		if char == '/' {
+			// encountered / input may have a path following current param, parse that next
+			next = p.parsePath
+			break
+		}
+
+		if char == '?' {
+			// encountered ? input may have a query following current param, parse that next
+			next = p.parseQuery
+			break
+		}
+
+		if char == '#' {
+			// encountered # input may have a fragment following current param, parse that next
+			next = p.parseFragment
+			break
+		}
+
+		if char == '%' {
+			// a % must be followed by 2 hex digits
+			if (currentIndex+2 >= inputLength) ||
+				isNotHexDigit(input[currentIndex+1]) ||
+				isNotHexDigit(input[currentIndex+2]) {
+				return p.errorf(currentIndex, "%% is not followed by 2 hex digits")
+			}
+			// if we got here, we're dealing with percent encoded char, jump three chars
+			percentEncoded = true
+			indexIncrement = 3
+		} else {
+			// not percent encoded
+			percentEncoded = false
+			indexIncrement = 1
+		}
+
+		// make sure current char is a valid param-char
+		// idchar = ALPHA / DIGIT / "." / "-"
+		if !percentEncoded && isNotValidParamChar(char) {
+			return p.errorf(currentIndex, "character is not allowed in param - %c", char)
+		}
+
+		// move to the next char
+		currentIndex = currentIndex + indexIncrement
+	}
+
+	// set parser state
+	p.currentIndex = currentIndex
+
 	return next
 }
 
@@ -577,6 +712,14 @@ func (p *parser) errorf(index int, format string, args ...interface{}) parserSte
 //   idchar = ALPHA / DIGIT / "." / "-"
 func isNotValidIDChar(char byte) bool {
 	return isNotAlpha(char) && isNotDigit(char) && char != '.' && char != '-'
+}
+
+// isNotValidParamChar returns true if a byte is not allowed in a param-name
+// or param-value from the grammar:
+//   idchar = ALPHA / DIGIT / "." / "-" / "_" / ":"
+func isNotValidParamChar(char byte) bool {
+	return isNotAlpha(char) && isNotDigit(char) &&
+		char != '.' && char != '-' && char != '_' && char != ':'
 }
 
 // isNotValidQueryOrFragmentChar returns true if a byte is not allowed in a Fragment
