@@ -151,7 +151,7 @@ func (d *DID) String() string {
 		buf.WriteString(d.Query) // nolint, returned error is always nil
 	}
 
-	if d.Fragment != "" && d.Path == "" && len(d.PathSegments) == 0 {
+	if d.Fragment != "" {
 		// add fragment only when there is no path
 		buf.WriteByte('#')          // nolint, returned error is always nil
 		buf.WriteString(d.Fragment) // nolint, returned error is always nil

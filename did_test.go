@@ -154,16 +154,6 @@ func TestString(t *testing.T) {
 		d := &DID{Method: "example", ID: "123", Fragment: "00000"}
 		assert(t, "did:example:123#00000", d.String())
 	})
-
-	t.Run("does not include Fragment if Path is present", func(t *testing.T) {
-		d := &DID{Method: "example", ID: "123", Path: "a/b", Fragment: "00000"}
-		assert(t, "did:example:123/a/b", d.String())
-	})
-
-	t.Run("does not include Fragment if PathSegments is present", func(t *testing.T) {
-		d := &DID{Method: "example", ID: "123", PathSegments: []string{"a", "b"}, Fragment: "00000"}
-		assert(t, "did:example:123/a/b", d.String())
-	})
 }
 
 func TestParse(t *testing.T) {
